@@ -1,69 +1,128 @@
 :root {
-  --bg-main: #f8fafc;
-  --bg-header: #ffffff;
-  --bg-sidebar: #ffffff;
-  --bg-panel: #ffffff;
-  --bg-input: #f8fafc;
+  /* =========================================================
+     GEOMAPAI DESIGN TOKENS — dark-first geospatial intelligence
+     palette. Deep near-black backgrounds, precise borders, a cyan
+     primary + violet secondary accent, and dedicated semantic
+     tokens for confidence/status states (success/warning/danger)
+     so no component ever hardcodes a status color directly.
+     Every color used anywhere in the app should resolve through
+     one of these variables. ========================================================= */
+  --bg-main: #070A0F;
+  --bg-header: #0B1017;
+  --bg-sidebar: #0B1017;
+  --bg-panel: #0F151E;
+  --bg-panel-elevated: #121A24;
+  --bg-input: #0B1017;
 
-  --text-main: #0f172a;
-  --text-muted: #64748b;
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --text-faint: #64748B;
 
-  --border-color: #e2e8f0;
+  --border-color: #1E2A36;
+  --border-color-strong: #26374A;
 
-  --accent-color: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-soft: rgba(37, 99, 235, 0.12);
-  --accent-shadow: rgba(37, 99, 235, 0.22);
+  --accent-color: #38BDF8;
+  --accent-hover: #7DD3FC;
+  --accent-soft: rgba(56, 189, 248, 0.12);
+  --accent-shadow: rgba(56, 189, 248, 0.22);
+  --accent-text: #06141F;
 
-  --blue-soft: #eff6ff;
-  --green-soft: #f0fdf4;
+  --accent-2: #8B5CF6;
+  --accent-2-soft: rgba(139, 92, 246, 0.12);
+  --accent-2-shadow: rgba(139, 92, 246, 0.22);
 
-  --sidebar-active: #eff6ff;
-  --icon-bg: #f8fafc;
-  --hover-bg: #f1f5f9;
+  /* Semantic status tokens — used for confidence bands, resolved/failed
+     states, and inline system messages. Every component reads one of
+     these instead of a literal hex, so a single edit here re-themes
+     every badge, marker, and bar consistently. */
+  --success: #22C55E;
+  --success-soft: rgba(34, 197, 94, 0.14);
+  --success-strong: #4ADE80;
 
-  --table-header: #f8fafc;
-  --view-bg: #eff6ff;
-  --export-bg: #eff6ff;
-  --tip-bg: #f8fafc;
+  --warning: #F59E0B;
+  --warning-soft: rgba(245, 158, 11, 0.14);
+  --warning-strong: #FBBF24;
+
+  --danger: #EF4444;
+  --danger-soft: rgba(239, 68, 68, 0.14);
+  --danger-strong: #F87171;
+
+  --blue-soft: var(--accent-soft);
+  --green-soft: var(--success-soft);
+
+  --sidebar-active: var(--accent-soft);
+  --icon-bg: #121A24;
+  --hover-bg: #141C27;
+
+  --table-header: #0B1017;
+  --view-bg: var(--accent-soft);
+  --export-bg: var(--accent-soft);
+  --tip-bg: #121A24;
+
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
 
   --shadow:
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 5px 16px rgba(15, 23, 42, 0.04);
+    0 1px 2px rgba(0, 0, 0, 0.35),
+    0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
-[data-theme='dark'] {
-  --bg-main: #0b1120;
-  --bg-header: #111827;
-  --bg-sidebar: #0f172a;
-  --bg-panel: #111827;
-  --bg-input: #0f172a;
+/* Light mode is a secondary, deliberately-derived theme — same token
+   roles, same accent hues, restated for a bright surface rather than
+   dropped. Cyan/violet at full saturation are too low-contrast on
+   white, so both are deepened here specifically for light backgrounds;
+   every pairing follows the same role each token plays in dark mode. */
+[data-theme='light'] {
+  --bg-main: #F1F5F9;
+  --bg-header: #FFFFFF;
+  --bg-sidebar: #FFFFFF;
+  --bg-panel: #FFFFFF;
+  --bg-panel-elevated: #F8FAFC;
+  --bg-input: #F1F5F9;
 
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
+  --text-main: #0F172A;
+  --text-muted: #475569;
+  --text-faint: #64748B;
 
-  --border-color: #263244;
+  --border-color: #E2E8F0;
+  --border-color-strong: #CBD5E1;
 
-  --accent-color: #60a5fa;
-  --accent-hover: #93c5fd;
-  --accent-soft: rgba(96, 165, 250, 0.12);
-  --accent-shadow: rgba(96, 165, 250, 0.18);
+  --accent-color: #0284C7;
+  --accent-hover: #0369A1;
+  --accent-soft: rgba(2, 132, 199, 0.08);
+  --accent-shadow: rgba(2, 132, 199, 0.18);
+  --accent-text: #FFFFFF;
 
-  --blue-soft: #172554;
-  --green-soft: #052e16;
+  --accent-2: #7C3AED;
+  --accent-2-soft: rgba(124, 58, 237, 0.08);
+  --accent-2-shadow: rgba(124, 58, 237, 0.18);
 
-  --sidebar-active: #172554;
-  --icon-bg: #172033;
-  --hover-bg: #1e293b;
+  --success: #16A34A;
+  --success-soft: rgba(22, 163, 74, 0.10);
+  --success-strong: #15803D;
 
-  --table-header: #0f172a;
-  --view-bg: #172554;
-  --export-bg: #172554;
-  --tip-bg: #0f172a;
+  --warning: #D97706;
+  --warning-soft: rgba(217, 119, 6, 0.10);
+  --warning-strong: #B45309;
+
+  --danger: #DC2626;
+  --danger-soft: rgba(220, 38, 38, 0.10);
+  --danger-strong: #B91C1C;
+
+  --blue-soft: var(--accent-soft);
+  --green-soft: var(--success-soft);
+
+  --sidebar-active: var(--accent-soft);
+  --icon-bg: #F1F5F9;
+  --hover-bg: #F1F5F9;
+
+  --table-header: #F8FAFC;
+  --view-bg: var(--accent-soft);
+  --export-bg: var(--accent-soft);
+  --tip-bg: #F1F5F9;
 
   --shadow:
-    0 1px 2px rgba(0, 0, 0, 0.2),
-    0 8px 24px rgba(0, 0, 0, 0.12);
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 5px 16px rgba(15, 23, 42, 0.06);
 }
 
 * {
@@ -89,6 +148,7 @@ body {
     Helvetica,
     Arial,
     sans-serif;
+  font-feature-settings: "cv11", "ss01";
   transition:
     background-color 0.25s ease,
     color 0.25s ease;
@@ -111,7 +171,7 @@ select:focus-visible {
 
 ::selection {
   background: var(--accent-color);
-  color: white;
+  color: var(--accent-text);
 }
 
 ::-webkit-scrollbar {
@@ -124,14 +184,29 @@ select:focus-visible {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #334155;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+
+[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
-[data-theme='dark'] ::-webkit-scrollbar-thumb {
-  background: #334155;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapPin, Radar } from 'lucide-react';
+import { MapPin, Crosshair } from 'lucide-react';
 
 // Mirrors the real backend pipeline stages (extraction -> local lookup ->
 // Nominatim fallback / disambiguation) so the copy is honest about what's
@@ -124,18 +124,16 @@ export default function ResolveLoader({ isLoading, onSettled }) {
       aria-live="polite"
     >
       <div className="resolve-loader-visual">
-        <div className={`resolve-loader-rings ${settled ? 'is-settled' : ''}`}>
-          <span className="resolve-loader-ring" />
-          <span className="resolve-loader-ring" />
-          <span className="resolve-loader-ring" />
+        <div className={`resolve-loader-map ${settled ? 'is-settled' : ''}`}>
+          <div className="resolve-loader-map-grid" />
 
-          <div className="resolve-loader-sweep" />
+          <div className="resolve-loader-reticle">
+            <Crosshair size={18} strokeWidth={1.75} />
+          </div>
 
           <div className="resolve-loader-icon">
-            {settled ? (
+            {settled && (
               <MapPin size={26} className="resolve-loader-pin" strokeWidth={2} />
-            ) : (
-              <Radar size={24} strokeWidth={2} />
             )}
           </div>
         </div>

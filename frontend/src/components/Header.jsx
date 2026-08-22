@@ -59,11 +59,11 @@ const Header = ({ theme, toggleTheme }) => {
         <div className="header-title-main">
           <Sparkles size={16} />
 
-          <h1>Analysis Workspace</h1>
+          <h1>Incident Report</h1>
         </div>
 
         <p>
-          Place-name extraction & canonical mapping
+          Paste a report, get resolved locations
         </p>
       </div>
 

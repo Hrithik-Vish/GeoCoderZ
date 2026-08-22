@@ -80,12 +80,12 @@ const TextHighlighter = ({
 
         <div>
           <h2>
-            Text Analysis
+            Incident Report
           </h2>
 
           <p>
-            Extract Report place
-            names automatically
+            Paste the raw report — GeoMapAI extracts
+            and resolves every place mentioned
           </p>
         </div>
       </div>
@@ -123,7 +123,7 @@ const TextHighlighter = ({
             }`}
             value={inputText}
             onChange={handleChange}
-            placeholder="Paste historical documents, archival text, letters or other content here..."
+            placeholder="Paste a report, message, transcript, or any other text containing place names here..."
             disabled={isExtracting}
           />
         )}

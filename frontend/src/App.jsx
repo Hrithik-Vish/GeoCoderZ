@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Map,
   MapPin,
-  CheckCircle2,
-  Database,
   AlertCircle,
+  AlertTriangle,
 } from 'lucide-react';
 
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import TextHighlighter from './components/TextHighlighter';
+import HighlightedText from './components/HighlightedText';
 import ResultsPanel from './components/ResultsPanel';
 import MapView from './components/MapView';
+import LandingPage from './components/LandingPage';
+import GeographicBackground from './components/GeographicBackground';
 
 import {
   MOCK_SUCCESS_RESPONSE,
@@ -54,10 +55,15 @@ function resolveMock(text) {
 }
 
 function App() {
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState('dark');
+  const [hasEnteredApp, setHasEnteredApp] =
+    useState(false);
 
   const [extractedPlaces, setExtractedPlaces] =
     useState([]);
+
+  const [analyzedText, setAnalyzedText] =
+    useState('');
 
   const [responseMessage, setResponseMessage] =
     useState(null);
@@ -71,7 +77,24 @@ function App() {
     useState(null);
 
   const [activeTab, setActiveTab] =
-    useState('Text Analysis');
+    useState('Incident Report');
+
+  // A click on the "Need review" summary stat asks the compact
+  // location list to jump straight to the review filter. Kept as a
+  // small {value, token} object rather than lifting ResultsPanel's
+  // whole filter state up here — App.jsx only needs to say "show me
+  // the review ones now," not own the filter lifecycle. token
+  // increments on every click so a second click re-applies the
+  // filter even if it was manually changed back to "All" since.
+  const [reviewFocusRequest, setReviewFocusRequest] =
+    useState(null);
+
+  const focusOnReviewItems = () => {
+    setReviewFocusRequest((previous) => ({
+      value: 'unresolved',
+      token: (previous?.token ?? 0) + 1,
+    }));
+  };
 
   useEffect(() => {
     document.documentElement.setAttribute(
@@ -99,6 +122,7 @@ function App() {
     setApiError('');
     setResponseMessage(null);
     setExtractedPlaces([]);
+    setAnalyzedText('');
     setSelectedPlace(null);
 
     try {
@@ -216,6 +240,12 @@ function App() {
         normalizedPlaces
       );
 
+      setAnalyzedText(
+        typeof data.original_text === 'string'
+          ? data.original_text
+          : trimmedText
+      );
+
       setResponseMessage(
         data.message ?? null
       );
@@ -226,6 +256,7 @@ function App() {
       );
 
       setExtractedPlaces([]);
+      setAnalyzedText('');
       setResponseMessage(null);
 
       setApiError(
@@ -244,44 +275,50 @@ function App() {
           place.status === 'resolved'
       );
 
-    const highConfidence =
-      resolved.filter(
+    const needsReview =
+      extractedPlaces.filter(
         (place) =>
-          typeof place.confidence ===
-            'number' &&
-          place.confidence >= 0.9
+          place.status !== 'resolved'
       );
 
-    const states = new Set();
-
-    resolved.forEach((place) => {
-      if (place.state) {
-        states.add(place.state);
-      }
-    });
-
-    // contract.md's extracted[] items don't currently include a `state`
-    // field — every place normalized in handleExtract carries state: null
-    // against the real backend today. hasStateData distinguishes "the
-    // backend sent state, and this text genuinely resolved to zero
-    // distinct states" (states.size === 0 but hasStateData is true) from
-    // "the backend doesn't send state data at all" (nothing to count).
-    // Only the first case should ever render as a real "0". See the
-    // States Covered stat card below.
-    const hasStateData = extractedPlaces.some(
-      (place) => Boolean(place.state)
-    );
+    // Average confidence across resolved places only — an unresolved
+    // entry has no meaningful confidence to average in (contract.md
+    // sends 0.0 for those, which would just drag the number down
+    // without saying anything real about resolution quality).
+    const averageConfidence =
+      resolved.length > 0
+        ? Math.round(
+            (resolved.reduce(
+              (sum, place) =>
+                sum +
+                (typeof place.confidence === 'number'
+                  ? place.confidence
+                  : 0),
+              0
+            ) /
+              resolved.length) *
+              100
+          )
+        : null;
 
     return {
       locations:
         extractedPlaces.length,
-      highConfidence:
-        highConfidence.length,
-      states: states.size,
-      hasStateData,
       resolved: resolved.length,
+      needsReview: needsReview.length,
+      averageConfidence,
     };
   }, [extractedPlaces]);
+
+  if (!hasEnteredApp) {
+    return (
+      <LandingPage
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onEnter={() => setHasEnteredApp(true)}
+      />
+    );
+  }
 
   return (
     <div className="app-container">
@@ -291,35 +328,32 @@ function App() {
       />
 
       <div className="main-content">
+        <GeographicBackground isActive={isExtracting} />
+
         <Header
           theme={theme}
           toggleTheme={toggleTheme}
         />
 
         <main className="page-content">
-          {activeTab === 'Text Analysis' && (
+          {activeTab === 'Incident Report' && (
             <div className="dashboard-page">
               <div className="welcome-section">
                 <span className="eyebrow">
                   <span className="eyebrow-dot" />
-                  ANALYSIS WORKSPACE
+                  INCIDENT REPORT
                 </span>
 
                 <h2>
-                  Transform ANY text
-                  into
-                  <span>
-                    {' '}
-                    geospatial intelligence.
-                  </span>
+                  Paste an incident report.
+                  <span> Get map-ready locations.</span>
                 </h2>
 
                 <p>
-                  Extract current place
-                  names, map them to modern
-                  canonical locations, and
-                  understand why each location
-                  was selected.
+                  GeoMapAI extracts every place mentioned in a raw report,
+                  resolves each one to a real coordinate, and shows its
+                  reasoning — so you can verify the answer instead of
+                  reading the report by hand.
                 </p>
               </div>
 
@@ -329,7 +363,7 @@ function App() {
 
                   <div>
                     <strong>
-                      Backend connection failed
+                      Unable to process this report
                     </strong>
 
                     <p>{apiError}</p>
@@ -347,90 +381,85 @@ function App() {
                 </div>
               )}
 
-              <div className="stats-grid">
-                <div className="stat-card">
-                  <div className="stat-icon blue">
-                    <MapPin size={20} />
-                  </div>
-
-                  <div>
-                    <span>
-                      Locations Detected
-                    </span>
-
-                    <strong>
-                      {stats.locations}
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="stat-card">
-                  <div className="stat-icon green">
-                    <CheckCircle2 size={20} />
-                  </div>
-
-                  <div>
-                    <span>
-                      High Confidence
-                    </span>
-
-                    <strong>
-                      {stats.highConfidence}
-                    </strong>
-                  </div>
-                </div>
-
-                <div
-                  className="stat-card"
-                  title={
-                    stats.hasStateData
-                      ? undefined
-                      : 'State data is not provided by the connected backend yet.'
+              <div className="incident-input-section">
+                <TextHighlighter
+                  onExtract={handleExtract}
+                  isExtracting={
+                    isExtracting
                   }
-                >
-                  <div className="stat-icon purple">
-                    <Map size={20} />
-                  </div>
-
-                  <div>
-                    <span>
-                      States Covered
-                    </span>
-
-                    <strong>
-                      {stats.hasStateData
-                        ? stats.states
-                        : '—'}
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="stat-card">
-                  <div className="stat-icon orange">
-                    <Database size={20} />
-                  </div>
-
-                  <div>
-                    <span>
-                      Processing Status
-                    </span>
-
-                    <strong className="online-text">
-                      {isExtracting
-                        ? 'Processing'
-                        : 'Ready'}
-                    </strong>
-                  </div>
-                </div>
+                />
               </div>
+
+              {extractedPlaces.length > 0 && (
+                <div className="incident-summary-strip">
+                  <div className="incident-summary-stat">
+                    <strong>{stats.locations}</strong>
+                    <span>
+                      Location{stats.locations !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+
+                  <div className="incident-summary-divider" />
+
+                  <div className="incident-summary-stat incident-summary-stat--resolved">
+                    <strong>{stats.resolved}</strong>
+                    <span>Resolved</span>
+                  </div>
+
+                  <div className="incident-summary-divider" />
+
+                  <button
+                    type="button"
+                    className={`incident-summary-stat incident-summary-stat--button ${
+                      stats.needsReview > 0
+                        ? 'incident-summary-stat--review'
+                        : ''
+                    }`}
+                    onClick={focusOnReviewItems}
+                    disabled={stats.needsReview === 0}
+                    title={
+                      stats.needsReview > 0
+                        ? 'Filter the list to locations needing review'
+                        : undefined
+                    }
+                  >
+                    {stats.needsReview > 0 && <AlertTriangle size={13} />}
+                    <strong>{stats.needsReview}</strong>
+                    <span>Need review</span>
+                  </button>
+
+                  {stats.averageConfidence !== null && (
+                    <>
+                      <div className="incident-summary-divider" />
+
+                      <div className="incident-summary-stat">
+                        <strong>{stats.averageConfidence}%</strong>
+                        <span>Avg. confidence</span>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="incident-summary-status">
+                    <span
+                      className={
+                        isExtracting
+                          ? 'incident-summary-status-dot is-processing'
+                          : 'incident-summary-status-dot'
+                      }
+                    />
+                    {isExtracting ? 'Processing' : 'Ready'}
+                  </div>
+                </div>
+              )}
 
               <div className="dashboard-layout">
                 <div className="analysis-column">
-                  <TextHighlighter
-                    onExtract={handleExtract}
-                    isExtracting={
-                      isExtracting
-                    }
+                  <ResultsPanel
+                    places={extractedPlaces}
+                    selectedPlace={selectedPlace}
+                    onPlaceSelect={setSelectedPlace}
+                    focusFilter={reviewFocusRequest}
+                    compact
                   />
                 </div>
 
@@ -439,12 +468,11 @@ function App() {
                     <div className="map-card-header">
                       <div>
                         <h3>
-                          Spatial Visualization
+                          Incident Map
                         </h3>
 
                         <p>
-                          Detected locations on
-                          the map
+                          Where the report is referring to
                         </p>
                       </div>
 
@@ -462,22 +490,39 @@ function App() {
                         selectedPlace={
                           selectedPlace
                         }
+                        onPlaceSelect={setSelectedPlace}
+                        theme={theme}
                       />
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="results-full-width">
-                <ResultsPanel
-                  places={
-                    extractedPlaces
-                  }
-                  onPlaceSelect={
-                    setSelectedPlace
-                  }
-                />
-              </div>
+              {analyzedText && (
+                <div className="highlighted-text-panel">
+                  <div className="panel-heading">
+                    <div className="panel-heading-icon blue">
+                      <MapPin size={19} />
+                    </div>
+
+                    <div>
+                      <h2>Original Incident Report</h2>
+
+                      <p>
+                        Detected place names are highlighted —
+                        click one to view it on the map
+                      </p>
+                    </div>
+                  </div>
+
+                  <HighlightedText
+                    text={analyzedText}
+                    places={extractedPlaces}
+                    selectedPlace={selectedPlace}
+                    onSelectPlace={setSelectedPlace}
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -508,7 +553,9 @@ function App() {
                   selectedPlace={
                     selectedPlace
                   }
+                  onPlaceSelect={setSelectedPlace}
                   fullScreen
+                  theme={theme}
                 />
               </div>
             </div>

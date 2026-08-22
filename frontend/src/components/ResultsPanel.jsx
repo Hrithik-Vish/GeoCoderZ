@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Search,
   MapPin,
@@ -9,15 +9,37 @@ import {
   ChevronUp,
   ShieldCheck,
   FileJson,
+  AlertTriangle,
 } from 'lucide-react';
 
 const ResultsPanel = ({
   places = [],
+  selectedPlace = null,
   onPlaceSelect,
+  compact = false,
+  focusFilter = null,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterState, setFilterState] = useState('All');
+  const [filterConfidence, setFilterConfidence] = useState('All');
   const [expandedReason, setExpandedReason] = useState(null);
+
+  // focusFilter lets a parent (the incident summary strip's "Need
+  // review" stat) request a specific filter be applied here, without
+  // lifting filterConfidence's full state up — App.jsx only ever needs
+  // to say "show me the review ones," not manage the whole filter
+  // lifecycle. Keyed by an incrementing `token` (not just the filter
+  // value) so clicking the same stat twice in a row re-applies the
+  // filter even if the person had since changed the dropdown by hand.
+  useEffect(() => {
+    if (focusFilter?.value) {
+      setFilterConfidence(focusFilter.value);
+    }
+    // Intentionally keyed on focusFilter.token only, not
+    // focusFilter.value, so repeated clicks on the same summary stat
+    // re-trigger this even when the value is unchanged from last time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusFilter?.token]);
 
   const resolvedPlaces = places.filter(
     (place) =>
@@ -46,6 +68,23 @@ const ResultsPanel = ({
   // and stays correct either way (filterState === 'All' always matches).
   const hasStateFilterOptions = states.length > 1;
 
+  // Unlike `state`, `confidence` is always present on every extracted
+  // item per contract.md (0.0 for failed entries) — so this filter is
+  // never dead UI and only needs to hide when there's nothing to filter
+  // at all yet.
+  const getConfidenceBand = (place) => {
+    if (place.status !== 'resolved') return 'unresolved';
+
+    const value =
+      typeof place.confidence === 'number'
+        ? place.confidence
+        : 0;
+
+    if (value >= 0.9) return 'High';
+    if (value >= 0.6) return 'Medium';
+    return 'Low';
+  };
+
   const filteredPlaces = useMemo(() => {
     const search = searchTerm.toLowerCase().trim();
 
@@ -65,9 +104,13 @@ const ResultsPanel = ({
         filterState === 'All' ||
         place.state === filterState;
 
-      return matchesSearch && matchesState;
+      const matchesConfidence =
+        filterConfidence === 'All' ||
+        getConfidenceBand(place) === filterConfidence;
+
+      return matchesSearch && matchesState && matchesConfidence;
     });
-  }, [places, searchTerm, filterState]);
+  }, [places, searchTerm, filterState, filterConfidence]);
 
   const confidencePercent = (value) => {
     if (
@@ -111,7 +154,7 @@ const ResultsPanel = ({
     }
 
     const headers = [
-      'Historical Name',
+      'Input Name',
       'Canonical Name',
       'Latitude',
       'Longitude',
@@ -234,6 +277,195 @@ const ResultsPanel = ({
     URL.revokeObjectURL(url);
   };
 
+  /* =========================
+     COMPACT MODE
+     A vertical location list rather than a wide table — used when
+     ResultsPanel sits in a narrow column next to the map (the primary
+     "Detected Locations | Incident Map" workspace pane), where the
+     full table's 780px min-width would force horizontal scrolling
+     inside an already-narrow pane. Shares every piece of state,
+     filtering, and the export/reason-toggle logic above with the
+     table view below — only the markup differs, so search, filters,
+     CSV/GeoJSON export, and text<->map<->list sync all keep working
+     identically in either mode.
+  ========================= */
+
+  if (compact) {
+    return (
+      <div className="panel-card results-panel results-panel--compact">
+        <div className="results-header">
+          <div className="panel-heading">
+            <div className="panel-heading-icon green">
+              <CheckCircle2 size={19} />
+            </div>
+
+            <div>
+              <h2>Detected Locations</h2>
+
+              <p>
+                {resolvedPlaces.length} resolved
+                {places.length - resolvedPlaces.length > 0 &&
+                  `, ${places.length - resolvedPlaces.length} need review`}
+              </p>
+            </div>
+          </div>
+
+          <div className="export-actions">
+            <button
+              className="export-button"
+              onClick={handleExportCSV}
+              disabled={!filteredPlaces.length}
+              title="Export CSV"
+            >
+              <Download size={15} />
+            </button>
+
+            <button
+              className="export-button geojson-button"
+              onClick={handleExportGeoJSON}
+              disabled={!resolvedPlaces.length}
+              title="Export GeoJSON"
+            >
+              <FileJson size={15} />
+            </button>
+          </div>
+        </div>
+
+        <div className="results-toolbar results-toolbar--compact">
+          <div className="search-box">
+            <Search size={15} />
+
+            <input
+              type="text"
+              placeholder="Search locations..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+            />
+          </div>
+
+          {places.length > 0 && (
+            <select
+              className="compact-filter-select"
+              value={filterConfidence}
+              onChange={(event) => setFilterConfidence(event.target.value)}
+            >
+              <option value="All">All</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+              <option value="unresolved">Review</option>
+            </select>
+          )}
+        </div>
+
+        <div className="location-list">
+          {filteredPlaces.length === 0 ? (
+            <div className="empty-results empty-results--compact">
+              <div className="empty-results-icon">
+                <Search size={22} />
+              </div>
+
+              <h3>
+                {places.length === 0
+                  ? 'No locations yet'
+                  : 'No matching results'}
+              </h3>
+
+              <p>
+                {places.length === 0
+                  ? 'Paste an incident report above to begin.'
+                  : 'Try a different search or filter.'}
+              </p>
+            </div>
+          ) : (
+            filteredPlaces.map((place, index) => {
+              const key = `${place.raw}-${index}`;
+              const isResolved = place.status === 'resolved';
+              const confidence = confidencePercent(place.confidence);
+
+              const isSelected =
+                selectedPlace &&
+                selectedPlace.raw === place.raw &&
+                selectedPlace.lat === place.lat &&
+                selectedPlace.long === place.long;
+
+              const confidenceBand = getConfidenceBand(place);
+
+              return (
+                <div
+                  key={key}
+                  className={[
+                    'location-card',
+                    isSelected ? 'location-card-selected' : '',
+                    !isResolved ? 'location-card-review' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
+                  <div className="location-card-main">
+                    <div className="location-card-name">
+                      <strong>
+                        {isResolved ? place.canonical : place.raw || 'Unknown'}
+                      </strong>
+
+                      {isResolved && place.raw && place.raw !== place.canonical && (
+                        <span className="location-card-raw">“{place.raw}”</span>
+                      )}
+
+                      {place.state && (
+                        <span className="location-card-state">{place.state}</span>
+                      )}
+                    </div>
+
+                    {isResolved ? (
+                      <div className={`location-card-confidence confidence-${confidenceBand.toLowerCase()}`}>
+                        <strong>{confidence}%</strong>
+                        <span>{confidenceBand.toUpperCase()} CONFIDENCE</span>
+                      </div>
+                    ) : (
+                      <span className="review-badge">
+                        <AlertTriangle size={12} />
+                        Needs review
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="location-card-reason">
+                    <span className="location-card-reason-label">
+                      {isResolved
+                        ? 'Why this location?'
+                        : "Why couldn't this resolve?"}
+                    </span>
+
+                    <p>{place.reason || 'No explanation was provided.'}</p>
+
+                    {isResolved && (
+                      <div className="reason-expanded-meta">
+                        <span>
+                          Source: <strong>{getSourceLabel(place.source)}</strong>
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {isResolved && (
+                    <button
+                      className="location-card-view-button"
+                      onClick={() => onPlaceSelect(place)}
+                    >
+                      <MapPin size={13} />
+                      {isSelected ? 'Viewing on map' : 'View on map'}
+                    </button>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="panel-card results-panel">
       <div className="results-header">
@@ -313,6 +545,25 @@ const ResultsPanel = ({
             </select>
           </div>
         )}
+
+        {places.length > 0 && (
+          <div className="filter-box">
+            <SlidersHorizontal size={16} />
+
+            <select
+              value={filterConfidence}
+              onChange={(event) =>
+                setFilterConfidence(event.target.value)
+              }
+            >
+              <option value="All">All Confidence</option>
+              <option value="High">High Confidence</option>
+              <option value="Medium">Medium Confidence</option>
+              <option value="Low">Low Confidence</option>
+              <option value="unresolved">Unresolved</option>
+            </select>
+          </div>
+        )}
       </div>
 
       {places.length > 0 && (
@@ -388,6 +639,12 @@ const ResultsPanel = ({
                   const isOpen =
                     expandedReason === key;
 
+                  const isSelected =
+                    selectedPlace &&
+                    selectedPlace.raw === place.raw &&
+                    selectedPlace.lat === place.lat &&
+                    selectedPlace.long === place.long;
+
                   return (
                     <FragmentRow
                       key={key}
@@ -395,6 +652,7 @@ const ResultsPanel = ({
                       isResolved={isResolved}
                       confidence={confidence}
                       isOpen={isOpen}
+                      isSelected={isSelected}
                       getSourceLabel={
                         getSourceLabel
                       }
@@ -422,6 +680,7 @@ const FragmentRow = ({
   isResolved,
   confidence,
   isOpen,
+  isSelected,
   getSourceLabel,
   toggleReason,
   onPlaceSelect,
@@ -430,11 +689,12 @@ const FragmentRow = ({
   return (
     <>
       <tr
-        className={
-          isOpen
-            ? 'result-row-open'
-            : ''
-        }
+        className={[
+          isOpen ? 'result-row-open' : '',
+          isSelected ? 'result-row-selected' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
       >
         <td>
           <div className="historical-name">

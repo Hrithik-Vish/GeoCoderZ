@@ -4,10 +4,12 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
+import Logo from './Logo';
+
 const Sidebar = ({ activeTab, setActiveTab }) => {
   const menuItems = [
     {
-      name: 'Text Analysis',
+      name: 'Incident Report',
       icon: FileText,
       description: 'Extract & map places',
     },
@@ -21,7 +23,9 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <div className="brand-icon">G</div>
+        <div className="brand-icon">
+          <Logo size={22} />
+        </div>
 
         <div>
           <h2>GeoMapAI</h2>
@@ -66,12 +70,16 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
         })}
       </nav>
 
+      <div className="sidebar-section-title sidebar-section-title--system">
+        SYSTEM
+      </div>
+
       <div className="sidebar-footer">
         <div className="status-dot" />
 
         <div>
-          <strong>System Online</strong>
-          <span>GeoMapAI Engine</span>
+          <strong>Engine Online</strong>
+          <span>v1.0</span>
         </div>
       </div>
     </aside>
