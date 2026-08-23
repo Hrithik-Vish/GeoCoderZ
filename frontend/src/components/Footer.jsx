@@ -1,18 +1,22 @@
 import Logo from './Logo';
-import { TEAM_NAME, TEAM_MEMBERS } from './TeamSection';
+import { TEAM_MEMBERS } from './TeamSection';
 
 /**
  * Footer
  *
- * Plan sections 71, 74: GeoMapAI identity + "Built by Geocoderz" +
- * the six team names with their roll/class identifiers (same fixed
- * order as TeamSection, imported directly so the two can never drift
- * out of sync) + "GEOCODERZ · GeoMapAI · Geospatial Intelligence."
+ * GeoMapAI identity + "Built by GeoCoderz" + the six team names with
+ * their roll/class identifiers (same fixed order as TeamSection,
+ * imported directly so the two can never drift out of sync) +
+ * "GeoCoderz · GeoMapAI · Geospatial Intelligence."
  *
- * No links are rendered — the plan says "Only include links that
- * actually exist," and no GitHub/docs/contact URL has been provided,
- * so inventing one would be a broken or misleading link. Add real
- * hrefs here once they exist rather than guessing.
+ * Team name is written directly as the literal "GeoCoderz" (capital
+ * G, capital C) rather than imported from TeamSection's TEAM_NAME, so
+ * this footer's spelling stays correct even if that constant is ever
+ * changed for its own uppercased eyebrow-label use.
+ *
+ * No links are rendered — no GitHub/docs/contact URL has been
+ * provided, so inventing one would be a broken or misleading link.
+ * Add real hrefs here once they exist rather than guessing.
  */
 export default function Footer() {
   return (
@@ -26,6 +30,7 @@ export default function Footer() {
           <div>
             <strong>GeoMapAI</strong>
             <span>Geospatial Intelligence</span>
+            <span className="app-footer-credit">By GeoCoderz</span>
           </div>
         </div>
 
@@ -33,9 +38,7 @@ export default function Footer() {
 
         <div className="app-footer-team">
           <span className="app-footer-team-label">Built by</span>
-          <strong className="app-footer-team-name">
-            {TEAM_NAME.toUpperCase()}
-          </strong>
+          <strong className="app-footer-team-name">GeoCoderz</strong>
 
           <div className="app-footer-team-members">
             {TEAM_MEMBERS.map((member) => (
@@ -50,7 +53,7 @@ export default function Footer() {
         <div className="app-footer-divider" />
 
         <div className="app-footer-meta">
-          GEOCODERZ · GeoMapAI · Geospatial Intelligence
+          GeoCoderz · GeoMapAI · Geospatial Intelligence
         </div>
       </div>
     </footer>

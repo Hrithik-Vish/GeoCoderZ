@@ -277,104 +277,42 @@
 
   border-radius: 12px;
 
-  background:
-    linear-gradient(
-      135deg,
-      var(--accent-color),
-      var(--accent-2)
-    );
+  background: var(--accent-color);
 
-  box-shadow:
-    0 8px 20px
-    var(--accent-shadow);
-
-  transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
+  transition: transform 0.2s ease;
 }
 
 .brand-icon:hover {
-  transform: translateY(-2px) rotate(-2deg);
-
-  box-shadow:
-    0 12px 25px
-    var(--accent-2-shadow);
+  transform: translateY(-1px);
 }
 
 /* =========================================================
-   LOGO MARK — scattered candidate mentions converging onto one
-   resolved coordinate. Used at chip size in the sidebar (on the
-   accent gradient, so it renders in fixed white/near-white rather
-   than theme tokens) and standalone elsewhere (landing page, loader)
-   where it tracks the active theme via CSS variables.
+   LOGO MARK — a location pin whose head opens into the letter "G",
+   the ring cut on a diagonal so it also reads as a compass bearing.
+   Flat two-fill mark (pin body + G counter as negative space), so it
+   stays legible from favicon size up. Used at chip size in the
+   sidebar (on a solid accent tile, so it renders in fixed white/near-
+   white rather than theme tokens) and standalone elsewhere (nav,
+   footer, landing page) where it tracks the active theme.
 ========================================================= */
 
-.geomapai-logo-bearing {
-  stroke: currentColor;
-  stroke-width: 1;
-  stroke-dasharray: 2 2;
-  opacity: 0.5;
+.geomapai-logo-pin {
+  fill: var(--accent-color);
 }
 
-.geomapai-logo-candidate {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  opacity: 0.6;
+.geomapai-logo-g {
+  fill: var(--bg-panel);
 }
 
-.geomapai-logo-resolved circle {
-  fill: currentColor;
+/* Inside the solid sidebar chip: fixed light pin + fixed dark counter,
+   not theme tokens, since the chip background itself doesn't change
+   with theme. */
+.brand-icon .geomapai-logo-pin {
+  fill: var(--accent-text);
 }
 
-.geomapai-logo-resolved line {
-  stroke: currentColor;
-  stroke-width: 1.75;
-  stroke-linecap: round;
-}
-
-/* Inside the gradient sidebar chip: fixed light color, not theme
-   tokens, since the chip background itself doesn't change with theme. */
-.brand-icon .geomapai-logo {
-  color: var(--accent-text);
-}
-
-/* Standalone placements (landing page, favicons rendered inline,
-   future loading states): tracks the active theme's accent. */
-.geomapai-logo:not(.brand-icon .geomapai-logo) {
-  color: var(--accent-color);
-}
-
-.geomapai-logo--animated .geomapai-logo-candidate {
-  animation: logoCandidatePulse 2.4s ease-in-out infinite;
-}
-
-.geomapai-logo--animated .geomapai-logo-bearing {
-  animation: logoBearingFlow 2.4s ease-in-out infinite;
-}
-
-@keyframes logoCandidatePulse {
-  0%,
-  100% {
-    opacity: 0.35;
-    r: 2.4px;
-  }
-
-  50% {
-    opacity: 0.85;
-    r: 1.6px;
-  }
-}
-
-@keyframes logoBearingFlow {
-  0%,
-  100% {
-    opacity: 0.25;
-  }
-
-  50% {
-    opacity: 0.7;
-  }
+.brand-icon .geomapai-logo-g {
+  fill: var(--accent-color);
 }
 
 .sidebar-brand h2 {
@@ -4359,17 +4297,6 @@ body,
   display: flex;
   align-items: center;
   justify-content: center;
-
-  border-radius: 9px;
-
-  background:
-    linear-gradient(
-      135deg,
-      var(--accent-color),
-      var(--accent-2)
-    );
-
-  color: var(--accent-text);
 }
 
 .app-footer-brand strong {
@@ -4381,8 +4308,18 @@ body,
 }
 
 .app-footer-brand span {
+  display: block;
+
   color: var(--text-muted);
   font-size: 0.72rem;
+}
+
+.app-footer-credit {
+  color: var(--accent-color) !important;
+  font-size: 0.66rem !important;
+  font-weight: 600;
+
+  opacity: 0.85;
 }
 
 .app-footer-divider {
@@ -5491,17 +5428,6 @@ body,
   display: flex;
   align-items: center;
   justify-content: center;
-
-  border-radius: 8px;
-
-  background:
-    linear-gradient(
-      135deg,
-      var(--accent-color),
-      var(--accent-2)
-    );
-
-  color: var(--accent-text);
 }
 
 .landing-nav-brand-text {
@@ -5837,5 +5763,254 @@ body,
 @media (max-width: 500px) {
   .why-matters-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   SPLASH INTRO (SplashIntro.jsx)
+   A one-time "GEOCODERZ PRESENTS GeoMapAI" boot sequence shown before
+   LandingPage mounts — not a permanent section, never replayed during
+   normal navigation. Visual language deliberately reuses the landing
+   page's own restraint (fixed dark base, faint grid, a couple of
+   contour lines and nodes) rather than introducing new decoration, and
+   the mark is the same <Logo /> used everywhere else in the app.
+
+   Each stage is gated by an `is-visible` class toggled from JS
+   (SplashIntro.jsx's timers), not by CSS animation-delay — this keeps
+   the reduced-motion path (which jumps straight to the final stage)
+   trivial: it's the same markup with the classes already applied,
+   just without the transition duration.
+========================================================= */
+
+.splash-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--bg-main);
+  overflow: hidden;
+
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+
+.splash-intro.is-exiting {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-intro-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+
+  opacity: 0;
+  animation: splashBgIn 0.6s ease-out forwards;
+}
+
+.splash-intro.is-reduced-motion .splash-intro-bg {
+  opacity: 1;
+  animation: none;
+}
+
+@keyframes splashBgIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.splash-intro-grid {
+  position: absolute;
+  inset: 0;
+
+  background-image:
+    linear-gradient(var(--border-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-color) 1px, transparent 1px);
+  background-size: 56px 56px;
+  background-position: -1px -1px;
+  opacity: 0.14;
+}
+
+.splash-intro-bg-svg {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+}
+
+.splash-intro-contours {
+  fill: none;
+  stroke: var(--accent-color);
+  stroke-width: 0.06;
+  opacity: 0.07;
+}
+
+.splash-intro-nodes circle {
+  fill: var(--accent-color);
+  opacity: 0;
+
+  animation: splashNodeFade 2.6s ease-in-out 1 forwards;
+}
+
+.splash-intro.is-reduced-motion .splash-intro-nodes circle {
+  opacity: 0.2;
+  animation: none;
+}
+
+@keyframes splashNodeFade {
+  0% {
+    opacity: 0;
+  }
+
+  30%,
+  70% {
+    opacity: 0.22;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.splash-intro-content {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  padding: 24px;
+}
+
+/* GEOCODERZ */
+.splash-intro-geocoderz {
+  color: var(--text-main);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.34em;
+
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.5s ease-out,
+    transform 0.5s ease-out;
+}
+
+.splash-intro-geocoderz.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.splash-intro.is-reduced-motion .splash-intro-geocoderz {
+  transition: none;
+}
+
+/* PRESENTS */
+.splash-intro-presents {
+  margin-top: 10px;
+
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.42em;
+
+  opacity: 0;
+  transition: opacity 0.4s ease-out;
+}
+
+.splash-intro-presents.is-visible {
+  opacity: 1;
+}
+
+.splash-intro.is-reduced-motion .splash-intro-presents {
+  transition: none;
+}
+
+/* GeoMapAI mark + tagline */
+.splash-intro-mark {
+  margin-top: 40px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
+}
+
+.splash-intro-mark.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.splash-intro.is-reduced-motion .splash-intro-mark {
+  transition: none;
+}
+
+.splash-intro-mark-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.splash-intro-mark-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.splash-intro-mark-word {
+  color: var(--text-main);
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.splash-intro-mark-tagline {
+  margin-top: 10px;
+
+  color: var(--text-faint);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+}
+
+@media (max-width: 480px) {
+  .splash-intro-geocoderz {
+    font-size: 1.05rem;
+    letter-spacing: 0.26em;
+  }
+
+  .splash-intro-presents {
+    font-size: 0.62rem;
+    letter-spacing: 0.34em;
+  }
+
+  .splash-intro-mark {
+    margin-top: 30px;
+  }
+
+  .splash-intro-mark-word {
+    font-size: 1.3rem;
+  }
+
+  .splash-intro-mark-tagline {
+    font-size: 0.58rem;
+    letter-spacing: 0.22em;
   }
 }

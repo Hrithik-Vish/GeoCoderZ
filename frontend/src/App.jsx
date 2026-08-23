@@ -12,6 +12,7 @@ import HighlightedText from './components/HighlightedText';
 import ResultsPanel from './components/ResultsPanel';
 import MapView from './components/MapView';
 import LandingPage from './components/LandingPage';
+import SplashIntro from './components/SplashIntro';
 import GeographicBackground from './components/GeographicBackground';
 
 import {
@@ -38,6 +39,35 @@ const API_BASE_URL =
 const USE_MOCK = false;
 const MOCK_DELAY_MS = 2200;
 
+// Session-scoped flag so the "GeoCoderz presents GeoMapAI" boot splash
+// plays once per browsing session, not on every internal navigation —
+// it's a one-time opening experience, not a permanent part of the
+// landing page. A fresh tab/session (or a hard reload after the tab was
+// closed) will see it again, which matches the brief.
+const SPLASH_SESSION_KEY = 'geoMapAIIntroPlayed';
+
+function hasSplashAlreadyPlayed() {
+  if (typeof window === 'undefined') {
+    return true;
+  }
+
+  try {
+    return window.sessionStorage.getItem(SPLASH_SESSION_KEY) === 'true';
+  } catch {
+    // Private browsing / storage disabled — fail open rather than
+    // getting stuck, at the cost of the splash possibly replaying.
+    return false;
+  }
+}
+
+function markSplashAsPlayed() {
+  try {
+    window.sessionStorage.setItem(SPLASH_SESSION_KEY, 'true');
+  } catch {
+    // Ignore — nothing to persist to, so it may simply replay next time.
+  }
+}
+
 // Text containing the whole word "empty" routes to the zero-results
 // fixture instead of the success one, so both edge cases in contract.md
 // Section 5 are reachable via USE_MOCK without touching this file again.
@@ -58,6 +88,10 @@ function App() {
   const [theme, setTheme] = useState('dark');
   const [hasEnteredApp, setHasEnteredApp] =
     useState(false);
+
+  const [showSplash, setShowSplash] = useState(
+    () => !hasSplashAlreadyPlayed()
+  );
 
   const [extractedPlaces, setExtractedPlaces] =
     useState([]);
@@ -102,6 +136,11 @@ function App() {
       theme
     );
   }, [theme]);
+
+  const handleSplashFinish = () => {
+    markSplashAsPlayed();
+    setShowSplash(false);
+  };
 
   const toggleTheme = () => {
     setTheme((previous) =>
@@ -311,6 +350,10 @@ function App() {
   }, [extractedPlaces]);
 
   if (!hasEnteredApp) {
+    if (showSplash) {
+      return <SplashIntro onFinish={handleSplashFinish} />;
+    }
+
     return (
       <LandingPage
         theme={theme}

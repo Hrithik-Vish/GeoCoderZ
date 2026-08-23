@@ -1,81 +1,54 @@
 /**
  * Logo
  *
- * GeoMapAI's mark, built directly from the product's actual mechanism
- * rather than a generic map-pin-plus-circuit-board: several ambiguous
- * candidate nodes (dashed, faint) converge along bearing lines onto one
- * solid, confident coordinate marker with crosshair ticks. This is
- * Concept C from the brand plan ("Resolved Location") — the same
- * ambiguous-mention-to-resolved-coordinate story the product itself
- * tells on every search, so the mark stays legible even at favicon
- * size and in monochrome (it's read as a convergence shape, not
- * dependent on hue).
+ * GeoMapAI's brand mark: a geometric location pin whose head opens into
+ * the letter "G", with the ring's opening cut on a diagonal so it also
+ * reads as a compass bearing rather than a plain circular counter. One
+ * shape carries all three ideas the brief calls for — place marker,
+ * initial, direction — without adding a separate globe, circuit
+ * decoration, or floating accent glyph.
+ *
+ * Deliberately flat: solid fills, no gradients, no drop shadow baked
+ * into the artwork itself (any elevation/shadow is applied by the
+ * container that hosts it, e.g. the sidebar chip). This keeps the mark
+ * legible at favicon size and reduces cleanly to a single color for
+ * monochrome placements.
+ *
+ * Color is driven entirely by CSS (the `.geomapai-logo-pin` /
+ * `.geomapai-logo-g` classes in App.css, keyed off theme variables) so
+ * the mark tracks the active theme automatically and needs no separate
+ * light/dark artwork — the geometry is identical between themes, only
+ * the two fills swap.
  *
  * Props:
  *  - size: number       Rendered width/height in px. Default 32.
- *  - animated: boolean  When true, candidate nodes softly pulse and
- *                        drift toward center (loading-state use, e.g.
- *                        a future page-load or processing moment).
- *                        Off by default; respects prefers-reduced-motion
- *                        globally via the app's existing CSS rule.
  *  - className: string  Extra class(es) merged onto the root <svg>.
  */
-const Logo = ({ size = 32, animated = false, className = '' }) => {
-  // Three unresolved candidate mentions at consistent angles, and the
-  // one canonical point they resolve to at center. Coordinates are
-  // fixed in a 40x40 viewBox so the mark scales cleanly to any size.
-  const candidates = [
-    { cx: 9, cy: 10 },
-    { cx: 31, cy: 12 },
-    { cx: 12, cy: 30 },
-  ];
-
-  const resolved = { cx: 22, cy: 22 };
-
+const Logo = ({ size = 32, className = '' }) => {
   return (
     <svg
       viewBox="0 0 40 40"
       width={size}
       height={size}
-      className={`geomapai-logo ${animated ? 'geomapai-logo--animated' : ''} ${className}`}
+      className={`geomapai-logo ${className}`}
       role="img"
       aria-label="GeoMapAI"
     >
-      {/* Bearing lines from each candidate toward the resolved point —
-          dashed to read as "possible", not as a committed connection. */}
-      {candidates.map((c, i) => (
-        <line
-          key={`line-${i}`}
-          x1={c.cx}
-          y1={c.cy}
-          x2={resolved.cx}
-          y2={resolved.cy}
-          className="geomapai-logo-bearing"
-          style={{ animationDelay: `${i * 0.35}s` }}
-        />
-      ))}
+      {/* Pin silhouette. */}
+      <path
+        className="geomapai-logo-pin"
+        d="M20 3.2 C12.16 3.2 5.8 9.56 5.8 17.4 C5.8 20.9 7.6 24.6 10.2 28 C12.8 31.4 16.1 34.4 18.35 36.45 C19.3 37.3 20.7 37.3 21.65 36.45 C23.9 34.4 27.2 31.4 29.8 28 C32.4 24.6 34.2 20.9 34.2 17.4 C34.2 9.56 27.84 3.2 20 3.2 Z"
+      />
 
-      {/* Candidate nodes: small, hollow, faint — unresolved mentions. */}
-      {candidates.map((c, i) => (
-        <circle
-          key={`node-${i}`}
-          cx={c.cx}
-          cy={c.cy}
-          r={2.4}
-          className="geomapai-logo-candidate"
-          style={{ animationDelay: `${i * 0.35}s` }}
-        />
-      ))}
-
-      {/* The resolved coordinate: solid disc + crosshair ticks, same
-          visual language as a map's center-pin reticle. */}
-      <g className="geomapai-logo-resolved">
-        <line x1={resolved.cx - 7} y1={resolved.cy} x2={resolved.cx - 4.2} y2={resolved.cy} />
-        <line x1={resolved.cx + 4.2} y1={resolved.cy} x2={resolved.cx + 7} y2={resolved.cy} />
-        <line x1={resolved.cx} y1={resolved.cy - 7} x2={resolved.cx} y2={resolved.cy - 4.2} />
-        <line x1={resolved.cx} y1={resolved.cy + 4.2} x2={resolved.cx} y2={resolved.cy + 7} />
-        <circle cx={resolved.cx} cy={resolved.cy} r={3.4} />
-      </g>
+      {/* "G" counter cut from the pin head, evenodd so it renders as
+          negative space against whatever sits behind the mark. The
+          ring's opening is cut on a diagonal (top right) rather than
+          straight across, doubling as a compass-bearing cue. */}
+      <path
+        className="geomapai-logo-g"
+        fillRule="evenodd"
+        d="M20 8.9 A8.4 8.4 0 1 0 28.4 17.3 L28.4 16.3 L20.9 16.3 L20.9 19.3 L24.9 19.3 A5.2 5.2 0 1 1 25.15 12.9 L27.85 10.5 A8.38 8.38 0 0 0 20 8.9 Z"
+      />
     </svg>
   );
 };

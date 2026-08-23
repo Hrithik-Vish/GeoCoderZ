@@ -12,11 +12,10 @@ import Logo from './Logo';
  * #map, #team) rather than routing anywhere, since this is a
  * single-page landing experience.
  *
- * Also carries the theme toggle and the "GEOCODERZ presents" credit
- * (plan section 57) — both used to float as separate fixed-position
- * elements before this navbar existed; consolidating them here avoids
- * three independent fixed elements competing for the same top strip
- * of the page.
+ * Also carries the theme toggle and the "By GeoCoderz" credit — both
+ * used to float as separate fixed-position elements before this
+ * navbar existed; consolidating them here avoids three independent
+ * fixed elements competing for the same top strip of the page.
  *
  * On mobile, collapses into a simple toggled menu rather than trying
  * to fit five items in a cramped bar.
@@ -52,7 +51,7 @@ export default function LandingNav({ onEnter, theme, onToggleTheme }) {
           <div className="landing-nav-brand-text">
             <span className="landing-nav-brand-name">GeoMapAI</span>
             <span className="landing-nav-presented-by">
-              GEOCODERZ presents
+              By GeoCoderz
             </span>
           </div>
         </a>

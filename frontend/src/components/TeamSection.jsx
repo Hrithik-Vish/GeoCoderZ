@@ -1,25 +1,22 @@
 /**
  * TeamSection
  *
- * The "Geocoderz" developer credits section (plan sections 71–73).
+ * The "GeoCoderz" developer credits section.
  *
  * The six names, their roll/class identifiers, and their order are
- * all fixed by the plan ("The order must not be changed") —
- * TEAM_MEMBERS below preserves that exact order and should not be
- * resorted or filtered for display.
+ * all fixed — TEAM_MEMBERS below preserves that exact order and
+ * should not be resorted or filtered for display.
  *
- * No roles are assigned to any member (plan section 73: "Do not add
- * fabricated roles... unless those roles are officially defined by
- * the team"). Every card shows only a name and the person's real
- * roll/class identifier — that identifier is provided data, not an
- * invented role, and the plan calls for it to be shown as secondary
- * metadata under the name.
+ * No roles are assigned to any member. Every card shows only a name
+ * and the person's real roll/class identifier — that identifier is
+ * provided data, not an invented role, shown as secondary metadata
+ * under the name.
  *
  * No photos are available, so every card uses a plain initials mark
  * rather than inventing a photograph.
  */
 
-const TEAM_NAME = 'Geocoderz';
+const TEAM_NAME = 'GeoCoderz';
 
 // Fixed order and identifiers — see file header. Do not resort.
 const TEAM_MEMBERS = [
