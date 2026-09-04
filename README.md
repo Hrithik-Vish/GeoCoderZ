@@ -8,6 +8,8 @@ Built for Smart India Hackathon 2026 (Internal Round). Architecture, schema, pip
 
 **API:** [geospatialqueries-backend.onrender.com](https://geospatialqueries-backend.onrender.com)
 
+> Note: the backend is hosted on Render's free tier and spins down after inactivity — the first request may take 30-60 seconds to wake up.
+
 ### Problem
 
 Free-text disaster/incident reports in India frequently reference place names that are ambiguous (multiple towns with the same name), misspelled, or use local aliases — making naive geocoding unreliable. GeoCoderZ resolves these mentions to a single, explainable canonical location instead of a silent best-guess.
