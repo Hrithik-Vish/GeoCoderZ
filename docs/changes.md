@@ -14,14 +14,14 @@ The new design fixes this with two changes:
    extracted — across *any* past request — is cached and reusable, not just
    exact sentence resubmissions.
 2. **India-only Nominatim scoping**, replacing the earlier worldwide-search
-   decision in `member4_tasks.md`, so fallback results can't silently resolve
+   decision in [[member4_tasks.md]], so fallback results can't silently resolve
    to a same-named place in another country.
 
 Separately, an intermediate design (caching *failed* resolutions too) was
 considered and **deliberately dropped** for MVP scope — see "What we chose
 not to build" below.
 
-**Database is being rebuilt from scratch** (`schema.sql` drops and recreates
+**Database is being rebuilt from scratch** ([[schema.sql]] drops and recreates
 everything) — this is not a migration, run it against a clean Supabase
 project.
 
@@ -29,17 +29,17 @@ project.
 
 ## Files changed
 
-| File | What changed |
-|---|---|
-| `schema.sql` | Full rebuild — new tables, restructured `resolved_places`, new fast-path view |
-| `backend_build.md` | Pipeline diagram rewritten, Tasks 2/9/10/12/14 updated, Known Gotchas updated |
-| `member4_tasks.md` | Task 8 switched from worldwide to India-only Nominatim, Task 13 wording updated |
-| `contract.md` | **No change** — response shape sent to frontend is identical |
-| `frontend_build.md` | **No change** — frontend only consumes the response shape, unaffected |
+| File                  | What changed                                                                    |
+| --------------------- | ------------------------------------------------------------------------------- |
+| [[schema.sql]]        | Full rebuild — new tables, restructured `resolved_places`, new fast-path view   |
+| [[backend_build.md]]  | Pipeline diagram rewritten, Tasks 2/9/10/12/14 updated, Known Gotchas updated   |
+| [[member4_tasks.md]]  | Task 8 switched from worldwide to India-only Nominatim, Task 13 wording updated |
+| [[contract.md]]       | **No change** — response shape sent to frontend is identical                    |
+| [[frontend_build.md]] | **No change** — frontend only consumes the response shape, unaffected           |
 
 ---
 
-## `schema.sql` — what's different
+## [[schema.sql]] — what's different
 
 - **`resolved_places`** is now keyed by `cleaned_name` (unique), not by
   `(original_text, raw_name)`. It no longer stores `raw_name` or
@@ -66,7 +66,7 @@ project.
 
 ---
 
-## Pipeline — what's different (affects Tasks 6, 7, 9, 10, 12 in `backend_build.md`)
+## Pipeline — what's different (affects Tasks 6, 7, 9, 10, 12 in [[backend_build.md]])
 
 **Old flow, per name:**
 1. Check cache by `(original_text, raw_name)`
@@ -97,7 +97,7 @@ same sentence that's still waiting on a live Nominatim call.
 
 ---
 
-## Nominatim scoping — what's different (Task 8 in `member4_tasks.md`)
+## Nominatim scoping — what's different (Task 8 in [[member4_tasks.md]])
 
 - **Old:** worldwide search, no country restriction.
 - **New:** `countrycodes=in` — India only.
@@ -138,19 +138,19 @@ the Nominatim round-trip) — that's expected, not a caching bug.
 
 - **Member 3 (Task 10):** your cache-check logic is now two checks, not one,
   and a fresh resolution is now two writes, not one — see the rewritten
-  Task 10 in `backend_build.md`.
+  Task 10 in [[backend_build.md]].
 - **Member 4 (Task 8):** Nominatim call needs `countrycodes=in` added, and
   your test expectations for "Springfield"-style names have flipped (should
-  now fail, not succeed) — see the rewritten Task 8 in `member4_tasks.md`.
+  now fail, not succeed) — see the rewritten Task 8 in [[member4_tasks.md]].
 - **User/me (Task 9, 12):** disambiguation logic itself (Task 9) is
   unchanged — same scoring factors, same output shape — it just runs less
   often now, only on a genuine double-miss. Task 12 needs to read order
   from `resolution_request_items` instead of assuming array order.
-- **Everyone:** `contract.md` — the actual request/response JSON the
+- **Everyone:** [[contract.md]] — the actual request/response JSON the
   frontend depends on — has not changed at all. Frontend work is
   unaffected by any of this.
 
 ---
 
 **Version:** v2, agreed [fill in date when merged]. Supersedes v1 of
-`schema.sql`, `backend_build.md`, and `member4_tasks.md`.
+[[schema.sql]], [[backend_build.md]], and [[member4_tasks.md]].

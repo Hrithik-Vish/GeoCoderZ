@@ -7,9 +7,9 @@ This covers your 3 backend tasks. These sit alongside your primary role in outre
 **This is an MVP for an internal round demo, not a production system.** You'll get roughly 5 minutes to actually show it working live; the rest of the presentation is talking through the idea, architecture, and future scope. So: build these to work reliably for the cases you'll actually demo. Rare edge cases get a one-line mention as a known limitation, not a fully engineered handler.
 
 **Reference docs:**
-- `schema.sql` — table structure (needed for Task 3)
-- `contract.md` — exact response shape your error handling (Task 13) needs to produce
-- `backend_build.md` — full pipeline context; your 3 tasks sit inside a bigger chain owned by User and Member 3. Task 8 sits between their Task 7 and Task 9.
+- [[schema.sql]] — table structure (needed for Task 3)
+- [[contract.md]] — exact response shape your error handling (Task 13) needs to produce
+- [[backend_build.md]] — full pipeline context; your 3 tasks sit inside a bigger chain owned by User and Member 3. Task 8 sits between their Task 7 and Task 9.
 
 ---
 
@@ -68,15 +68,15 @@ This covers your 3 backend tasks. These sit alongside your primary role in outre
 
 ## 4. Task 13 — Error Handling
 
-**What:** Make sure the edge cases defined in `contract.md` Section 5 actually produce those exact response shapes when they happen for real, not just in theory.
+**What:** Make sure the edge cases defined in [[contract.md]] Section 5 actually produce those exact response shapes when they happen for real, not just in theory.
 
 **The two cases that actually matter for the demo:**
 
-1. **No place names found at all** (contract.md 5.2) — this is mostly Member 3's short-circuit logic (right after his Task 5, spaCy extraction), but worth you double-checking it actually returns the right shape: empty `extracted` array + the `message` field explaining nothing was found.
+1. **No place names found at all** ([[contract.md]] 5.2) — this is mostly Member 3's short-circuit logic (right after his Task 5, spaCy extraction), but worth you double-checking it actually returns the right shape: empty `extracted` array + the `message` field explaining nothing was found.
 
-2. **One name fails to resolve while others succeed** (contract.md 5.3) — this is the one you're most directly responsible for, since it's a direct consequence of your Task 8. When Nominatim (India-scoped) also comes back empty or times out, make sure a `"failed"` entry gets constructed correctly: `canonical`, `lat`, `long`, `source` all `null`, `confidence: 0.0`, and a `reason` string that's actually informative and honest about the India-only scope — e.g. "No local match found; Nominatim fallback (India-scoped) also returned no results" rather than a generic error message. This matters if a judge deliberately tests a non-Indian place name to probe the system's boundary — the reason string should make the scoping clear, not read like a bug.
+2. **One name fails to resolve while others succeed** ([[contract.md]] 5.3) — this is the one you're most directly responsible for, since it's a direct consequence of your Task 8. When Nominatim (India-scoped) also comes back empty or times out, make sure a `"failed"` entry gets constructed correctly: `canonical`, `lat`, `long`, `source` all `null`, `confidence: 0.0`, and a `reason` string that's actually informative and honest about the India-only scope — e.g. "No local match found; Nominatim fallback (India-scoped) also returned no results" rather than a generic error message. This matters if a judge deliberately tests a non-Indian place name to probe the system's boundary — the reason string should make the scoping clear, not read like a bug.
 
-**Also worth knowing:** per `backend_build.md` v2, failed entries are never written to `resolved_places` or `raw_name_aliases` — every failure reruns the full pipeline fresh next time, including a fresh Nominatim call. You don't need to do anything differently for this in your Task 8/13 work (the "don't cache" behavior lives in Member 3's Task 10), but worth knowing so you're not surprised if the same failing name takes the same amount of time on a second attempt during the demo.
+**Also worth knowing:** per [[backend_build.md]] v2, failed entries are never written to `resolved_places` or `raw_name_aliases` — every failure reruns the full pipeline fresh next time, including a fresh Nominatim call. You don't need to do anything differently for this in your Task 8/13 work (the "don't cache" behavior lives in Member 3's Task 10), but worth knowing so you're not surprised if the same failing name takes the same amount of time on a second attempt during the demo.
 
 **Important — this task isn't solo.** Failed entries flow into User's Task 9 (disambiguation) and Task 12 (response assembly) — you're not building this in isolation, you're making sure your piece hands off a clean, correctly-shaped failure to theirs. Worth a quick sync with User once your Task 8 + this error handling is working, to confirm the failed entries look right end-to-end in the real response.
 
@@ -84,9 +84,9 @@ This covers your 3 backend tasks. These sit alongside your primary role in outre
 
 **Input:** The pipeline's behavior when extraction is empty, or when a name has no local and no Nominatim match.
 
-**Output:** Responses matching contract.md's documented shapes for both edge cases.
+**Output:** Responses matching [[contract.md]]'s documented shapes for both edge cases.
 
-**Done when:** You can trigger both edge cases with real test inputs (a sentence with no locations at all; a sentence with one clearly-fake place name) and the JSON that comes back matches contract.md exactly.
+**Done when:** You can trigger both edge cases with real test inputs (a sentence with no locations at all; a sentence with one clearly-fake place name) and the JSON that comes back matches [[contract.md]] exactly.
 
 ---
 
@@ -102,4 +102,4 @@ This covers your 3 backend tasks. These sit alongside your primary role in outre
 
 ## 6. Versioning
 
-**Current version: v2** — Task 8 changed from worldwide to India-only Nominatim scoping (`countrycodes=in`). Aligned with `contract.md` v1 (unchanged) and `backend_build.md` v2.
+**Current version: v2** — Task 8 changed from worldwide to India-only Nominatim scoping (`countrycodes=in`). Aligned with [[contract.md]] v1 (unchanged) and [[backend_build.md]] v2.

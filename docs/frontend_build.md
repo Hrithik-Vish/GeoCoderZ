@@ -6,28 +6,28 @@ Task division for frontend is being handled within the frontend team itself. Thi
 
 **This is an MVP for an internal round demo, not a production system.** You'll get roughly 5 minutes to show it working live — prioritize the core flow working cleanly over polish, animations, or responsiveness edge cases. See Section 6.
 
-**Reference doc:** `contract.md` is the exact source of truth for the request/response shape. Read it before wiring up the fetch call — this doc summarizes the essentials but isn't a substitute for it.
+**Reference doc:** [[contract.md]] is the exact source of truth for the request/response shape. Read it before wiring up the fetch call — this doc summarizes the essentials but isn't a substitute for it.
 
 ---
 
 ## 2. Functional Scope — What The Frontend Needs To Do
 
 - **Text input** — a box for the user to type or paste a sentence.
-- **Frontend-side empty/whitespace validation** — before sending anything, check the trimmed input isn't empty. If it is, block submission and show an inline message (e.g. "Please enter some text before submitting"). **The backend is never called in this case** — this logic must live here, not on the backend (see contract.md Section 5.1).
+- **Frontend-side empty/whitespace validation** — before sending anything, check the trimmed input isn't empty. If it is, block submission and show an inline message (e.g. "Please enter some text before submitting"). **The backend is never called in this case** — this logic must live here, not on the backend (see [[contract.md]] Section 5.1).
 - **Call `POST /resolve`** with `{ "text": "..." }` once validation passes.
 - **Render the response**, which includes:
   - The original text, with extracted place names visually highlighted/underlined
   - A results list or table of extracted places
   - A map (Leaflet or equivalent) with a pin for each successfully resolved place, positioned at its `lat`/`long`
 - **Click-to-reveal interaction** — clicking a highlighted name, a pin, or a results-list entry should reveal that place's `reason` field. **This is the single most important interaction for the demo** — it's what shows the system is reasoning about disambiguation, not just doing a database lookup. Prioritize this working smoothly over anything else visual.
-- **Handle "no locations found" state** (contract.md Section 5.2) — when `extracted` comes back as an empty array, show a clear message instead of an empty map with no explanation.
-- **Handle partial failures within a response** (contract.md Section 5.3) — an entry with `"status": "failed"` should render differently from a resolved one. Doesn't need to be elaborate — a greyed-out list entry or a small "couldn't resolve" tag next to that name is enough. No pin gets placed for a failed entry (no lat/long exists for it).
+- **Handle "no locations found" state** ([[contract.md]] Section 5.2) — when `extracted` comes back as an empty array, show a clear message instead of an empty map with no explanation.
+- **Handle partial failures within a response** ([[contract.md]] Section 5.3) — an entry with `"status": "failed"` should render differently from a resolved one. Doesn't need to be elaborate — a greyed-out list entry or a small "couldn't resolve" tag next to that name is enough. No pin gets placed for a failed entry (no lat/long exists for it).
 
 ---
 
 ## 3. Contract Reference (Condensed)
 
-Full detail is in `contract.md` — this is just enough to start building against.
+Full detail is in [[contract.md]] — this is just enough to start building against.
 
 **Request:**
 ```json
@@ -74,7 +74,7 @@ Either split (or a mix) works fine — the two halves aren't fully independent (
 
 ## 5. Local Dev Note — Building Before Backend Is Live
 
-No need to wait on the backend being fully wired up. Since `contract.md` defines the exact response shape, you can hardcode a fake response matching it — including a fake `"failed"` entry and a fake empty-`extracted` response — and build/test all the UI states against those mocks. Swap in the real `fetch` call to `/resolve` once the backend's ready; if the UI was built against the contract shape correctly, nothing else should need to change.
+No need to wait on the backend being fully wired up. Since [[contract.md]] defines the exact response shape, you can hardcode a fake response matching it — including a fake `"failed"` entry and a fake empty-`extracted` response — and build/test all the UI states against those mocks. Swap in the real `fetch` call to `/resolve` once the backend's ready; if the UI was built against the contract shape correctly, nothing else should need to change.
 
 ---
 
@@ -92,4 +92,4 @@ If something doesn't get fully handled, it's fine to mention it as a known limit
 
 ## 7. Versioning
 
-**Current version: v1** — first draft, agreed 9 Aug 2026, aligned with `contract.md` v1.
+**Current version: v1** — first draft, agreed 9 Aug 2026, aligned with [[contract.md]] v1.

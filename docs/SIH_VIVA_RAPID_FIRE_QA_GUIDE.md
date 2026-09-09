@@ -404,7 +404,7 @@ Evidence means "how do you *prove* this works, not just claim it?"
 **5. Technical Soundness**:
 - Architecture documented before coding (not reverse-engineered afterward)
 - Two-level cache design is proven efficient (single-level caching is standard; two-level is superior)
-- Evidence: `schema.sql` and `contract.md` show the design was rigorous
+- Evidence: [[schema.sql]] and [[contract.md]] show the design was rigorous
 
 **6. Competitive Comparison**:
 - Nominatim alone: No confidence scores, no India-first optimization, rate-limited
@@ -767,7 +767,7 @@ Evidence means demonstrable proof, not promises.
 **Technical Feasibility**:
 - ✅ All components are free/open-source (no vendor lock-in risk)
 - ✅ Architecture was designed before coding (not reverse-engineered)
-- ✅ Database schema matches contract (schema.sql aligns with API expectations)
+- ✅ Database schema matches contract ([[schema.sql]] aligns with API expectations)
 - ✅ Error handling is explicit (no silent failures)
 
 **Operational Feasibility**:

@@ -5,12 +5,12 @@
 This document covers the full backend pipeline behind `POST /resolve`. It's split across two owners working on one coupled chain — tasks aren't independent modules, each stage feeds the next, so a stage can't be fully tested in total isolation from its neighbors (see Section 4 for how to fake your way around that during parallel dev).
 
 **Owners:**
-- **User (you):** Task 1 (Supabase + PostGIS setup), Task 2 (run schema.sql), Task 9 (disambiguation logic), Task 12 (response assembly), Task 14 (testing)
+- **User (you):** Task 1 (Supabase + PostGIS setup), Task 2 (run [[schema.sql]]), Task 9 (disambiguation logic), Task 12 (response assembly), Task 14 (testing)
 - **Member 3:** Task 4 (FastAPI endpoint), Task 5 (spaCy extraction), Task 6 (rapidfuzz cleanup), Task 7 (GeoNames candidate lookup), Task 10 (cache check + storage write)
 
 **Reference docs:**
-- `contract.md` — exact request/response JSON shape. This is the final source of truth for what the endpoint sends back. If anything in this doc seems to disagree with contract.md, contract.md wins.
-- `schema.sql` — table structure. Already created and run (Task 2).
+- [[contract.md]] — exact request/response JSON shape. This is the final source of truth for what the endpoint sends back. If anything in this doc seems to disagree with [[contract.md]], [[contract.md]] wins.
+- [[schema.sql]] — table structure. Already created and run (Task 2).
 
 Tasks below are ordered by **pipeline position**, not by owner, so you can see where your piece sits relative to Member 3's.
 
@@ -68,7 +68,7 @@ For EACH extracted raw_name, individually, IN ORDER:
         into one extracted[] array, using resolution_request_items'
         position_in_text to preserve original order
                       ↓
-              Return JSON per contract.md
+              Return JSON per [[contract.md]]
 ```
 
 **Key points:**
@@ -76,35 +76,35 @@ For EACH extracted raw_name, individually, IN ORDER:
 - **Failures are never cached.** A name that fails to resolve (no GeoNames match, no Nominatim match) is not written to `resolved_places` or `raw_name_aliases`. It will always retry the full pipeline fresh if the same raw name appears again. This is a deliberate MVP scope decision — see Known Gotchas.
 - **Per-name, not per-sentence**, same as before: if a sentence has 3 names and 1 hits the fast path, only the other 2 run through cleanup/lookup/disambiguation.
 
-**Short-circuit case:** if spaCy finds zero names at all, skip everything after extraction and return immediately per contract.md Section 5.2 (empty `extracted` array + message). No `resolution_request_items` rows are needed in this case since there's nothing to position.
+**Short-circuit case:** if spaCy finds zero names at all, skip everything after extraction and return immediately per [[contract.md]] Section 5.2 (empty `extracted` array + message). No `resolution_request_items` rows are needed in this case since there's nothing to position.
 
 ---
 
 ## 3. Per-Task Breakdown
 
 ### Task 1 — Supabase Project Setup (User)
-**What:** Create the Supabase project. Enable the `postgis` and `pg_trgm` extensions. Confirm `pgcrypto` is enabled (needed for `gen_random_uuid()` in schema.sql — usually on by default in Supabase, but verify).
+**What:** Create the Supabase project. Enable the `postgis` and `pg_trgm` extensions. Confirm `pgcrypto` is enabled (needed for `gen_random_uuid()` in [[schema.sql]] — usually on by default in Supabase, but verify).
 **Input:** None — this is the foundation everything else sits on.
 **Output:** A live Supabase project with the right extensions on, and a connection string/API key ready to share with Member 3 and Member 4 (needed for Task 3 — CSV loading).
 **Done when:** You can run a test query like `SELECT postgis_version();` and `SELECT * FROM pg_extension;` and see `postgis`, `pg_trgm`, and `pgcrypto` all listed.
 
-### Task 2 — Run schema.sql (User)
-**What:** Execute `schema.sql` against the Supabase project to create `geonames_places`, `geonames_alternate_names`, `resolved_places`, `raw_name_aliases`, `resolution_requests`, `resolution_request_items`, and the `raw_name_fast_path` view.
-**Input:** The Supabase project from Task 1, `schema.sql`.
+### Task 2 — Run [[schema.sql]] (User)
+**What:** Execute [[schema.sql]] against the Supabase project to create `geonames_places`, `geonames_alternate_names`, `resolved_places`, `raw_name_aliases`, `resolution_requests`, `resolution_request_items`, and the `raw_name_fast_path` view.
+**Input:** The Supabase project from Task 1, [[schema.sql]].
 **Output:** All tables and the fast-path view exist and are queryable.
 **Done when:** All 6 tables + 1 view show up in the Supabase table editor, and the auto-`geom` triggers work — insert a test row with lat/long into `geonames_places` and confirm `geom` populates automatically.
 
 ### Task 4 — Bare FastAPI Endpoint (Member 3)
-**What:** Stand up `POST /resolve` in FastAPI. At this stage it just needs to accept `{ "text": string }`, validate the shape (not the emptiness — frontend handles that per contract.md 5.1), and return a hardcoded placeholder response matching contract.md's shape exactly. This is the scaffold everything else plugs into.
+**What:** Stand up `POST /resolve` in FastAPI. At this stage it just needs to accept `{ "text": string }`, validate the shape (not the emptiness — frontend handles that per [[contract.md]]5.1), and return a hardcoded placeholder response matching [[contract.md]]'s shape exactly. This is the scaffold everything else plugs into.
 **Input:** Raw request body.
-**Output:** A response matching contract.md's structure (even with fake data at first) — this lets frontend start integrating against something real immediately.
+**Output:** A response matching [[contract.md]]'s structure (even with fake data at first) — this lets frontend start integrating against something real immediately.
 **Done when:** Sending a POST with `{ "text": "test" }` via curl/Postman returns valid JSON matching the contract's field names and types exactly.
 
 ### Task 5 — spaCy Extraction (Member 3)
 **What:** Wire in `en_core_web_sm`, run NER on `text`, pull out every entity spaCy tags as a location (GPE/LOC labels). No cleanup yet — raw spans only.
 **Input:** The `text` string from the request.
 **Output:** A list of raw name strings (e.g. `["Thane", "Kalyan", "Springfield"]`) in the order they appear in the text.
-**Done when:** Running it against the test sentence in contract.md Section 4 produces exactly `["Thane", "Kalyan", "Springfield"]`. Also test against a sentence with zero locations to confirm it returns an empty list cleanly (this feeds the short-circuit case).
+**Done when:** Running it against the test sentence in [[contract.md]] Section 4 produces exactly `["Thane", "Kalyan", "Springfield"]`. Also test against a sentence with zero locations to confirm it returns an empty list cleanly (this feeds the short-circuit case).
 
 ### Task 6 — rapidfuzz Cleanup (Member 3)
 **What:** Take each raw name from Task 5 and normalize it — strip stray punctuation/whitespace, and fuzzy-match against known aliases (e.g. historical names like "Bombay" → "Mumbai") using the `geonames_alternate_names` table.
@@ -119,7 +119,7 @@ For EACH extracted raw_name, individually, IN ORDER:
 **Done when:** Querying "Thane" returns at least one candidate with correct lat/long. Querying a clearly-not-in-India name confirms an empty list comes back cleanly (this is what should trigger Nominatim fallback — Member 4's Task 8).
 
 ### Task 8 — Nominatim Fallback (Member 4)
-*(Owned by Member 4 — listed here because it sits directly between Task 7 and Task 9 in the pipeline. Full detail lives in `member4_tasks.md`.)*
+*(Owned by Member 4 — listed here because it sits directly between Task 7 and Task 9 in the pipeline. Full detail lives in [[member4_tasks.md]].)*
 **What:** If Task 7 returns zero local candidates, call the Nominatim API as a live backup.
 **Input:** The cleaned name string.
 **Output:** Either a candidate (lat/long + display name) formatted to look like a GeoNames candidate, or nothing (triggering a `"failed"` entry).
@@ -147,16 +147,16 @@ For EACH extracted raw_name, individually, IN ORDER:
 - Submitting a name that fails to resolve, twice — confirm it reruns the full pipeline (including Nominatim) both times, and that no row appears in `resolved_places` or `raw_name_aliases` for it.
 
 ### Task 12 — Response Assembly / Final Endpoint Wiring (User)
-**What:** Combine the results for every name in the request — whether they came from the fast path, a reused `cleaned_name`, a fresh resolution, or a failure — into the final `extracted[]` array, ordered using `resolution_request_items.position_in_text` (not implicit array order — that ordering now has to be explicitly tracked, since `resolved_places` rows are shared across requests and no longer carry their own per-request position). Wrap with `original_text` (read from the `resolution_requests` row created at the start of the pipeline) and `message` (null in the normal case) per contract.md.
+**What:** Combine the results for every name in the request — whether they came from the fast path, a reused `cleaned_name`, a fresh resolution, or a failure — into the final `extracted[]` array, ordered using `resolution_request_items.position_in_text` (not implicit array order — that ordering now has to be explicitly tracked, since `resolved_places` rows are shared across requests and no longer carry their own per-request position). Wrap with `original_text` (read from the `resolution_requests` row created at the start of the pipeline) and `message` (null in the normal case) per [[contract.md]].
 **Input:** A set of per-name results (fast-path hits + reused-`cleaned_name` + freshly resolved + failed), plus the `resolution_requests`/`resolution_request_items` rows for this request.
-**Output:** The final JSON response exactly matching contract.md's success-case shape.
-**Done when:** The full pipeline, run end to end on the Thane/Kalyan/Springfield sentence, produces JSON that matches contract.md Section 4's example exactly in structure (values will vary slightly based on real data, but field names/types/nesting must match precisely) — and a sentence with names in a scrambled resolution order (e.g. the 3rd name resolves fastest due to a fast-path hit) still comes back in original text order.
+**Output:** The final JSON response exactly matching [[contract.md]]'s success-case shape.
+**Done when:** The full pipeline, run end to end on the Thane/Kalyan/Springfield sentence, produces JSON that matches [[contract.md]] Section 4's example exactly in structure (values will vary slightly based on real data, but field names/types/nesting must match precisely) — and a sentence with names in a scrambled resolution order (e.g. the 3rd name resolves fastest due to a fast-path hit) still comes back in original text order.
 
 ### Task 14 — Testing (User)
 **What:** Test the full assembled pipeline against a range of inputs: the standard example sentence, a sentence with zero locations (confirms short-circuit), a sentence where one name is real but unfindable (confirms partial-failure shape, and confirms nothing gets cached for it), a repeat submission of the exact same sentence (confirms fast-path caching skips work), and a **different** sentence reusing a raw name from an earlier submission (confirms the fast path works across requests, not just on exact resubmission). Also test a deliberately misspelled variant of an already-resolved place (confirms the second-chance `cleaned_name` reuse path — lookup/disambiguation skipped, but a new `raw_name_aliases` row still gets written). Also sanity-check response times to make sure nothing hangs (especially around Nominatim's rate limit).
 **Input:** The fully wired `/resolve` endpoint.
 **Output:** A short list of confirmed-working test cases, and a list of any contract mismatches found and fixed before frontend integration.
-**Done when:** All 3 edge cases from contract.md Section 5 produce exactly the shapes documented there, verified against real running code, not just read through — plus the cross-sentence fast-path and `cleaned_name`-reuse cases above are confirmed via direct inspection of `resolved_places` and `raw_name_aliases` row counts, not just response timing.
+**Done when:** All 3 edge cases from [[contract.md]] Section 5 produce exactly the shapes documented there, verified against real running code, not just read through — plus the cross-sentence fast-path and `cleaned_name`-reuse cases above are confirmed via direct inspection of `resolved_places` and `raw_name_aliases` row counts, not just response timing.
 
 ---
 
@@ -167,7 +167,7 @@ You and Member 3 don't have to build strictly in sequence. Fake the pieces that 
 - **Member 3**, to test Task 6 (cleanup) before Task 5 (spaCy) is fully wired in: hardcode a fake list of raw names like `["Bombay", "Thane"]` and feed that straight into cleanup.
 - **Member 3**, to test Task 7 (GeoNames lookup) independently: call it directly with hardcoded cleaned names, no need to wait on cleanup being finished first.
 - **You**, to test Task 9 (disambiguation) before Task 7/8 are finished: hardcode a fake candidate list (2-3 fake rows with different populations/coordinates) and confirm the scoring picks the right one and produces a sensible reason string.
-- **You**, to test Task 12 (response assembly) before the full pipeline exists: hardcode a fake set of per-name results (mix of resolved and failed) and confirm the JSON it produces matches contract.md exactly.
+- **You**, to test Task 12 (response assembly) before the full pipeline exists: hardcode a fake set of per-name results (mix of resolved and failed) and confirm the JSON it produces matches [[contract.md]] exactly.
 
 Integrate for real (plug all pieces together, no more hardcoded fakes) daily if possible — don't wait until the last day to find out two pieces don't actually fit together.
 
@@ -176,8 +176,8 @@ Integrate for real (plug all pieces together, no more hardcoded fakes) daily if 
 ## 5. Known Gotchas
 
 - **Nominatim rate limit:** 1 request/second. Also requires a `User-Agent` header identifying the app, or requests may get blocked. Relevant to Task 8 (Member 4) but affects how fast Task 9/12 can run in testing too.
-- **Nominatim is scoped to India only** (`countrycodes=in` or equivalent) — this was previously worldwide in an earlier draft; see `member4_tasks.md` Task 8 for the current, corrected approach. A non-Indian place name (e.g. "Springfield") is expected to always fail to resolve under this scoping — that's by design, not a bug.
-- **`gen_random_uuid()`** in schema.sql needs the `pgcrypto` extension — confirm it's on during Task 1, don't assume.
+- **Nominatim is scoped to India only** (`countrycodes=in` or equivalent) — this was previously worldwide in an earlier draft; see [[member4_tasks.md]] Task 8 for the current, corrected approach. A non-Indian place name (e.g. "Springfield") is expected to always fail to resolve under this scoping — that's by design, not a bug.
+- **`gen_random_uuid()`** in [[schema.sql]] needs the `pgcrypto` extension — confirm it's on during Task 1, don't assume.
 - **Confidence is always a float 0.0–1.0**, never a 0–100 integer. Keep this consistent across Task 9 (where it's produced) and Task 12 (where it's passed through unchanged).
 - **`geonames_alternate_names` fuzzy matching** (Task 6) needs the `pg_trgm` extension enabled — same as above, confirm during Task 1.
 - **Two-level caching, not one flat cache:** Task 10's check is (1) `raw_name_fast_path` by exact `raw_name`, then (2) `resolved_places` by `cleaned_name` if the fast path misses. Don't collapse these into a single check — they skip different amounts of work (fast-path hit skips cleanup too; `cleaned_name` reuse still runs cleanup first).
@@ -189,6 +189,6 @@ Integrate for real (plug all pieces together, no more hardcoded fakes) daily if 
 
 ## 6. Versioning
 
-**Current version: v2** — introduces `raw_name_aliases` fast-path caching, `resolution_requests`/`resolution_request_items` for ordering, drops failure-caching. Aligned with `contract.md` v1 (unchanged — response shape unaffected) and `schema.sql` v2.
+**Current version: v2** — introduces `raw_name_aliases` fast-path caching, `resolution_requests`/`resolution_request_items` for ordering, drops failure-caching. Aligned with [[contract.md]] v1 (unchanged — response shape unaffected) and [[schema.sql]] v2.
 
-If pipeline behavior changes (new stage, reordered steps, changed caching granularity), update this doc and `contract.md` together if the change affects response shape, and notify the team.
+If pipeline behavior changes (new stage, reordered steps, changed caching granularity), update this doc and [[contract.md]] together if the change affects response shape, and notify the team.

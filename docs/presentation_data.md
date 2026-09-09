@@ -126,7 +126,7 @@ For EACH extracted raw_name, individually, IN ORDER:
         into one extracted[] array, using resolution_request_items'
         position_in_text to preserve original order
                       ↓
-              Return JSON per contract.md
+              Return JSON per [[contract.md]]
 ```
 
 **Two-level cache diagram note for the deck:** worth drawing as two boxes — "raw string cache" (fast, exact match) feeding into "cleaned-name cache" (broader match, still skips the expensive disambiguation step) — with disambiguation only running on a genuine double-miss. This is the piece most worth visualizing since it's also the core novelty claim.

@@ -3,7 +3,7 @@ test_pipeline.py
 .env
 __pycache__/
 node_modules/
-
+.obsidian/
 
 # Environment variables (contains secrets)
 .env
